@@ -1,4 +1,7 @@
 do_analise_preliminar = False
+do_knn = False
+do_dt = False
+do_mlp = True
 
 import numpy
 import pandas as pd
@@ -24,7 +27,7 @@ print('### Leitura dos Dados')
 list_features = []
 list_targets = []
 for i in range(1, 11):
-    X, y = load_svmlight_file(f='../Dataset/batch' + str(i) + '.dat', dtype=np.float64)
+    X, y = load_svmlight_file(f='./Dataset/batch' + str(i) + '.dat', dtype=np.float64)
     X = pd.DataFrame(X.toarray())
     y = pd.Series(y)
 
@@ -34,6 +37,7 @@ for i in range(1, 11):
 X = pd.concat(list_features, ignore_index=True)
 y = pd.concat(list_targets, ignore_index=True)
 
+# Todoo código dentro deste IF serve para análise dos dados
 if do_analise_preliminar:
     print(X.shape)
     print(X.head())
@@ -218,157 +222,160 @@ print(X[0:5,:])
 # usando o metodo para fazer uma unica divisao dos dados
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=seed)
 
-
 print("Início dos classificadores de individuais (KNN, DT, RANDOMFOREST, MLP)\n")
 # Criação dos classificadores
-# KNN
-clf_knn = neighbors.KNeighborsClassifier(n_neighbors=5)
-clf_knn = clf_knn.fit(X_train, y_train)
-pred_knn = clf_knn.predict(X_test)
 
-# Imprimindo relatório de classificação do modelo inicial
-print("Relatorio de Classificação do modelo inicial (kNN)")
-print(classification_report(y_test, pred_knn), "\n")
-
-# Relizando testes com varios k e metricas diferentes
-for k in range(1, 11):
-
-    clf_knn = neighbors.KNeighborsClassifier(n_neighbors=k, metric='euclidean', weights='distance', leaf_size=40)
+if do_knn:
+    # KNN
+    clf_knn = neighbors.KNeighborsClassifier(n_neighbors=5)
     clf_knn = clf_knn.fit(X_train, y_train)
-    pred_i = clf_knn.predict(X_test)
-    print("Acuracia do clf (KNN-euclidean): K = %2d, Train: %0.3f, Teste: %0.3f" % (k, clf_knn.score(X_train, y_train), clf_knn.score(X_test, y_test)))
+    pred_knn = clf_knn.predict(X_test)
 
-    clf_knn = neighbors.KNeighborsClassifier(n_neighbors=k, algorithm = 'auto', leaf_size = 30, metric = 'minkowski',
-    metric_params=None, n_jobs=None, p=2, weights='uniform')
+    # Imprimindo relatório de classificação do modelo inicial
+    print("Relatorio de Classificação do modelo inicial (kNN)")
+    print(classification_report(y_test, pred_knn), "\n")
+
+    # Relizando testes com varios k e metricas diferentes
+    for k in range(1, 11):
+
+        clf_knn = neighbors.KNeighborsClassifier(n_neighbors=k, metric='euclidean', weights='distance', leaf_size=40)
+        clf_knn = clf_knn.fit(X_train, y_train)
+        pred_i = clf_knn.predict(X_test)
+        print("Acuracia do clf (KNN-euclidean): K = %2d, Train: %0.3f, Teste: %0.3f" % (k, clf_knn.score(X_train, y_train), clf_knn.score(X_test, y_test)))
+
+        clf_knn = neighbors.KNeighborsClassifier(n_neighbors=k, algorithm = 'auto', leaf_size = 30, metric = 'minkowski',
+        metric_params=None, n_jobs=None, p=2, weights='uniform')
+        clf_knn = clf_knn.fit(X_train, y_train)
+        pred_i = clf_knn.predict(X_test)
+        print("Acuracia do clf (KNN - minkowski): K = %2d, Train: %0.3f, Teste: %0.3f" % (k, clf_knn.score(X_train, y_train), clf_knn.score(X_test, y_test)))
+
+        clf_knn = neighbors.KNeighborsClassifier(n_neighbors=k, metric='manhattan', p=k)
+        clf_knn = clf_knn.fit(X_train, y_train)
+        pred_i = clf_knn.predict(X_test)
+        print("Acuracia do clf (KNN - manhattan): K = %2d, Train: %0.3f, Teste: %0.3f" % (k, clf_knn.score(X_train, y_train), clf_knn.score(X_test, y_test)))
+
+        clf_knn = neighbors.KNeighborsClassifier(n_neighbors=k, metric='chebyshev', p=k)
+        clf_knn = clf_knn.fit(X_train, y_train)
+        pred_i = clf_knn.predict(X_test)
+        print("Acuracia do clf (KNN - chebyshev): K = %2d, Train: %0.3f, Teste: %0.3f" % (k, clf_knn.score(X_train, y_train), clf_knn.score(X_test, y_test)))
+
+
+    # Treinando novamente o modelo com valores otimos de K
+    clf_knn = neighbors.KNeighborsClassifier(n_neighbors=4, metric='euclidean')
     clf_knn = clf_knn.fit(X_train, y_train)
-    pred_i = clf_knn.predict(X_test)
-    print("Acuracia do clf (KNN - minkowski): K = %2d, Train: %0.3f, Teste: %0.3f" % (k, clf_knn.score(X_train, y_train), clf_knn.score(X_test, y_test)))
-
-    clf_knn = neighbors.KNeighborsClassifier(n_neighbors=k, metric='manhattan', p=k)
-    clf_knn = clf_knn.fit(X_train, y_train)
-    pred_i = clf_knn.predict(X_test)
-    print("Acuracia do clf (KNN - manhattan): K = %2d, Train: %0.3f, Teste: %0.3f" % (k, clf_knn.score(X_train, y_train), clf_knn.score(X_test, y_test)))
-
-    clf_knn = neighbors.KNeighborsClassifier(n_neighbors=k, metric='chebyshev', p=k)
-    clf_knn = clf_knn.fit(X_train, y_train)
-    pred_i = clf_knn.predict(X_test)
-    print("Acuracia do clf (KNN - chebyshev): K = %2d, Train: %0.3f, Teste: %0.3f" % (k, clf_knn.score(X_train, y_train), clf_knn.score(X_test, y_test)))
+    pred = clf_knn.predict(X_test)
 
 
-# Treinando novamente o modelo com valores otimos de K
-clf_knn = neighbors.KNeighborsClassifier(n_neighbors=4, metric='euclidean')
-clf_knn = clf_knn.fit(X_train, y_train)
-pred = clf_knn.predict(X_test)
+    # Imprimindo relatório de classificação do modelo final
+    print("Relatorio de Classificação do modelo final (KNN)- melhores parâmetros ")
+    print(classification_report(y_test, pred),"\n" )
+
+    print("KNN- Confussion matrix:\n", confusion_matrix(y_test, pred_knn))
+    print("KNN- Acuracia: (Treinamento) %0.3f" %  clf_knn.score(X_train, y_train))
+    print("KNN- Acuracia: (Testes) %0.3f" %  clf_knn.score(X_test, y_test))
+    print("###########################################################################\n")
+
+if do_dt:
+    # Decision Tree (DT)
+    clf_dt = tree.DecisionTreeClassifier(max_depth=2, random_state=seed)
+    clf_dt = clf_dt.fit(X_train, y_train)
+    pred_dt = clf_dt.predict(X_test)
+
+    # Imprimindo relatório de classificação do modelo inicial
+    print("Relatorio de Classificação do modelo inicial  (Decision Tree (DT)) ")
+    print(classification_report(y_test, pred_dt), "\n")
+
+    for i in range(1, 21):
+
+        clf = tree.DecisionTreeClassifier(criterion='entropy', max_depth=i, random_state=seed)
+        clf2 = tree.DecisionTreeClassifier(max_depth=i, random_state=seed)
+        clf3 = tree.DecisionTreeClassifier(criterion='gini', min_samples_leaf=5, min_samples_split=5, max_depth=i, random_state=seed)
+
+        clf = clf.fit(X_train, y_train)
+        clf2 = clf2.fit(X_train, y_train)
+        clf3 = clf3.fit(X_train, y_train)
+
+        print("Acuracia do clf (DT - Entropia): K = %2d, Train: %0.3f, Teste: %0.3f" % (
+        i, clf.score(X_train, y_train), clf.score(X_test, y_test)))
+
+        print("Acuracia do clf2 (DT - Default): K = %2d, Train: %0.3f, Teste: %0.3f" % (
+        i, clf2.score(X_train, y_train), clf2.score(X_test, y_test)))
+
+        print("Acuracia do clf3 (DT - Gini): K = %2d, Train: %0.3f, Teste: %0.3f" % (
+        i, clf3.score(X_train, y_train), clf3.score(X_test, y_test)))
+
+        print("Profundidade das arvores criadas para os classificadores")
+        print("%2d, %2d, %2d" % (clf.tree_.max_depth, clf2.tree_.max_depth, clf3.tree_.max_depth))
 
 
-# Imprimindo relatório de classificação do modelo final
-print("Relatorio de Classificação do modelo final (KNN)- melhores parâmetros ")
-print(classification_report(y_test, pred),"\n" )
+    # Criando a instância final do classificador DT
+    clf_dt = tree.DecisionTreeClassifier(max_depth=9, random_state=seed)
+    clf_dt = clf_dt.fit(X_train, y_train)
+    pred_dt = clf_dt.predict(X_test)
 
-print("KNN- Confussion matrix:\n", confusion_matrix(y_test, pred_knn))
-print("KNN- Acuracia: (Treinamento) %0.3f" %  clf_knn.score(X_train, y_train))
-print("KNN- Acuracia: (Testes) %0.3f" %  clf_knn.score(X_test, y_test))
-print("###########################################################################\n")
+    # Imprimindo relatório de classificação do modelo inicial
+    print("Relatorio de Classificação do modelo final  (DT) \n")
+    print(classification_report(y_test, pred_dt), "\n")
 
+    print("DT - Confussion matrix:\n", confusion_matrix(y_test, pred_dt))
+    print("DT - Acuracia: (Treinamento) %0.3f" %  clf_dt.score(X_train, y_train))
+    print("DT - Acuracia: (Testes) %0.3f" %  clf_dt.score(X_test, y_test))
+    print("###########################################################################\n")
 
-# Decision Tree (DT)
-clf_dt = tree.DecisionTreeClassifier(max_depth=2, random_state=seed)
-clf_dt = clf_dt.fit(X_train, y_train)
-pred_dt = clf_dt.predict(X_test)
-
-# Imprimindo relatório de classificação do modelo inicial
-print("Relatorio de Classificação do modelo inicial  (DT) ")
-print(classification_report(y_test, pred_dt), "\n")
-
-for i in range(1, 21):
-
-    clf = tree.DecisionTreeClassifier(criterion='entropy', max_depth=i, random_state=seed)
-    clf2 = tree.DecisionTreeClassifier(max_depth=i, random_state=seed)
-    clf3 = tree.DecisionTreeClassifier(criterion='gini', min_samples_leaf=5, min_samples_split=5, max_depth=i, random_state=seed)
-
-    clf = clf.fit(X_train, y_train)
-    clf2 = clf2.fit(X_train, y_train)
-    clf3 = clf3.fit(X_train, y_train)
-
-    print("Acuracia do clf (DT - Entropia): K = %2d, Train: %0.3f, Teste: %0.3f" % (
-    i, clf.score(X_train, y_train), clf.score(X_test, y_test)))
-
-    print("Acuracia do clf2 (DT - Default): K = %2d, Train: %0.3f, Teste: %0.3f" % (
-    i, clf2.score(X_train, y_train), clf2.score(X_test, y_test)))
-
-    print("Acuracia do clf3 (DT - Gini): K = %2d, Train: %0.3f, Teste: %0.3f" % (
-    i, clf3.score(X_train, y_train), clf3.score(X_test, y_test)))
-
-    print("Profundidade das arvores criadas para os classificadores")
-    print("%2d, %2d, %2d" % (clf.tree_.max_depth, clf2.tree_.max_depth, clf3.tree_.max_depth))
-
-
-# Criando a instância final do classificador DT
-clf_dt = tree.DecisionTreeClassifier(max_depth=9, random_state=seed)
-clf_dt = clf_dt.fit(X_train, y_train)
-pred_dt = clf_dt.predict(X_test)
-
-# Imprimindo relatório de classificação do modelo inicial
-print("Relatorio de Classificação do modelo final  (DT) \n")
-print(classification_report(y_test, pred_dt), "\n")
-
-print("DT - Confussion matrix:\n", confusion_matrix(y_test, pred_dt))
-print("DT - Acuracia: (Treinamento) %0.3f" %  clf_dt.score(X_train, y_train))
-print("DT - Acuracia: (Testes) %0.3f" %  clf_dt.score(X_test, y_test))
-print("###########################################################################\n")
-
-# Rede Neural com 3 camadas ((neuronios variaveis, random_state=10)
-
-# Criando a instância inicial do classificador RNA
-clf_rna = MLPClassifier(hidden_layer_sizes=([2,2]), random_state=seed, max_iter=1000)
-clf_rna = clf_rna.fit(X_train, y_train)
-pred_mlp = clf_rna.predict(X_test)
-
-# Imprimindo relatório de classificação do modelo inicial
-print("Relatorio de Classificação do modelo inicial  (RNA) ")
-print(classification_report(y_test, pred_mlp), "\n")
-
-
-for i in range(1, 11):
-
-    # Rede Neural com 1 camada (10 neuronios)
-    mlp1 = MLPClassifier(hidden_layer_sizes=([10]), random_state=seed)
-
-    # Rede Neural com 2 camadas (3 e 3 neuronios)
-    mlp2 = MLPClassifier(hidden_layer_sizes=(3, 3), random_state=seed)
-
+if do_mlp:
+    """
     # Rede Neural com 3 camadas ((neuronios variaveis, random_state=10)
-    mlp3 = MLPClassifier(hidden_layer_sizes=([i, i, i]), random_state=seed)
 
-    # Rede Neural com 1 camada (neuronios variaveis, random_state=10)
-    mlp4 = MLPClassifier(hidden_layer_sizes=([i]), random_state=seed)
+    # Criando a instância inicial do classificador RNA
+    clf_rna = MLPClassifier(hidden_layer_sizes=([2,2]), random_state=seed, max_iter=1000)
+    clf_rna = clf_rna.fit(X_train, y_train)
+    pred_mlp = clf_rna.predict(X_test)
 
-    # Rede Neural com 2 camadas ( neuronios variveis, random_state = 10)
-    mlp5 = MLPClassifier(hidden_layer_sizes=([i, i]), random_state=seed)
-
-    mlp1 = mlp1.fit(X_train, y_train)
-    mlp2 = mlp2.fit(X_train, y_train)
-    mlp3 = mlp3.fit(X_train, y_train)
-    mlp4 = mlp4.fit(X_train, y_train)
-    mlp5 = mlp5.fit(X_train, y_train)
-
-    print("Resultados - Classificador RNA \n")
-    print("Acuracia do MLP1: i = %2d, Train: %0.3f, Teste: %0.3f" % (i, mlp1.score(X_train, y_train), mlp1.score(X_test, y_test)))
-    print("Acuracia do MLP2: i = %2d, Train: %0.3f, Teste: %0.3f"  % (i, mlp2.score(X_train, y_train), mlp2.score(X_test, y_test)))
-    print("Acuracia do MLP3: i = %2d, Train: %0.3f, Teste: %0.3f" % (i, mlp3.score(X_train, y_train), mlp3.score(X_test, y_test)))
-    print("Acuracia do MLP4: i = %2d, Train: %0.3f, Teste: %0.3f" % (i, mlp4.score(X_train, y_train), mlp4.score(X_test, y_test)))
-    print("Acuracia do MLP5: i = %2d, Train: %0.3f, Teste: %0.3f" % (i, mlp5.score(X_train, y_train), mlp5.score(X_test, y_test)))
+    # Imprimindo relatório de classificação do modelo inicial
+    print("Relatorio de Classificação do modelo inicial  (RNA) ")
+    print(classification_report(y_test, pred_mlp), "\n")
 
 
-# Criando a instância final do classificador RNA
-clf_rna = MLPClassifier(hidden_layer_sizes=([10]), random_state=seed)
-clf_rna = clf_rna.fit(X_train, y_train)
-pred_mlp = clf_rna.predict(X_test)
+    for i in range(1, 11):
+
+        # Rede Neural com 1 camada (10 neuronios)
+        mlp1 = MLPClassifier(hidden_layer_sizes=([10]), random_state=seed)
+
+        # Rede Neural com 2 camadas (3 e 3 neuronios)
+        mlp2 = MLPClassifier(hidden_layer_sizes=(3, 3), random_state=seed)
+
+        # Rede Neural com 3 camadas ((neuronios variaveis, random_state=10)
+        mlp3 = MLPClassifier(hidden_layer_sizes=([i, i, i]), random_state=seed)
+
+        # Rede Neural com 1 camada (neuronios variaveis, random_state=10)
+        mlp4 = MLPClassifier(hidden_layer_sizes=([i]), random_state=seed)
+
+        # Rede Neural com 2 camadas ( neuronios variveis, random_state = 10)
+        mlp5 = MLPClassifier(hidden_layer_sizes=([i, i]), random_state=seed)
+
+        mlp1 = mlp1.fit(X_train, y_train)
+        mlp2 = mlp2.fit(X_train, y_train)
+        mlp3 = mlp3.fit(X_train, y_train)
+        mlp4 = mlp4.fit(X_train, y_train)
+        mlp5 = mlp5.fit(X_train, y_train)
+
+        print("Resultados - Classificador RNA \n")
+        print("Acuracia do MLP1: i = %2d, Train: %0.3f, Teste: %0.3f" % (i, mlp1.score(X_train, y_train), mlp1.score(X_test, y_test)))
+        print("Acuracia do MLP2: i = %2d, Train: %0.3f, Teste: %0.3f"  % (i, mlp2.score(X_train, y_train), mlp2.score(X_test, y_test)))
+        print("Acuracia do MLP3: i = %2d, Train: %0.3f, Teste: %0.3f" % (i, mlp3.score(X_train, y_train), mlp3.score(X_test, y_test)))
+        print("Acuracia do MLP4: i = %2d, Train: %0.3f, Teste: %0.3f" % (i, mlp4.score(X_train, y_train), mlp4.score(X_test, y_test)))
+        print("Acuracia do MLP5: i = %2d, Train: %0.3f, Teste: %0.3f" % (i, mlp5.score(X_train, y_train), mlp5.score(X_test, y_test)))
+
+"""
+    # Criando a instância final do classificador RNA
+    clf_rna = MLPClassifier(hidden_layer_sizes=([128,6]), random_state=seed)
+    clf_rna = clf_rna.fit(X_train, y_train)
+    pred_mlp = clf_rna.predict(X_test)
 
 
-print("MLP - Clasification report:\n", classification_report(y_test, pred_mlp))
-print("MLP - Confussion matrix:\n", confusion_matrix(y_test, pred_mlp))
+    print("MLP - Clasification report:\n", classification_report(y_test, pred_mlp))
+    print("MLP - Confussion matrix:\n", confusion_matrix(y_test, pred_mlp))
 
-print("MLP- Acuracia: (Treinamento) %0.3f" %  clf_rna.score(X_train, y_train))
-print("MLP- Acuracia: (Testes) %0.3f" %  clf_rna.score(X_test, y_test))
-print("###########################################################################\n")
+    print("MLP- Acuracia: (Treinamento) %0.3f" %  clf_rna.score(X_train, y_train))
+    print("MLP- Acuracia: (Testes) %0.3f" %  clf_rna.score(X_test, y_test))
+    print("###########################################################################\n")
